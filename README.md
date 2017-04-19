@@ -1,4 +1,4 @@
-This is a straight forward implementation of dynamic coattention network for reading comprehension with tensorflow.
+This is an implementation of dynamic coattention network for reading comprehension with tensorflow.
 
 https://arxiv.org/abs/1611.01604
 
