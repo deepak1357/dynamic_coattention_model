@@ -1,4 +1,4 @@
-This is an implementation of dynamic coattention network for reading comprehension with tensorflow.
+This is a tensorflow implementation of dynamic coattention network for reading comprehension.
 
 https://arxiv.org/abs/1611.01604
 
@@ -12,7 +12,7 @@ http://nlp.stanford.edu/data/glove.840B.300d.zip
 
 python data_preprocess.py /path/to/glove.txt
 
-Data can be downloaded
+Data can be downloaded: 
 https://rajpurkar.github.io/SQuAD-explorer/
 
 put train-v1.1.json and dev-v1.1.json in ./data
