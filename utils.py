@@ -23,12 +23,12 @@ def parsing(dataset, max_ctx_len=600):
         for paragraph in article['paragraphs']:
             str_context = paragraph['context']
             context = paragraph['context'].strip().split()
-            context = list(map(lambda x: re.sub(r'\(|\)\.\?\,\!\"', '', x), context))
+            context = list(map(lambda x: re.sub(r'\(|\)|\.|\?|\,|\!|\"', '', x), context))
             for question in paragraph['qas']:
                 qid = question['id']
                 qap = QAPair(qid)
                 qes = question['question'].strip().split()
-                qes = list(map(lambda x: re.sub(r'\(|\)\.\?\,\!\"', '', x), qes))
+                qes = list(map(lambda x: re.sub(r'\(|\)|\.|\?|\,|\!|\"', '', x), qes))
                 qap.context = context
                 qap.question = qes
                 qap.context_len = len(context)
