@@ -76,7 +76,7 @@ class DCN:
             bw_cell = tf.contrib.rnn.core_rnn_cell.LSTMCell(self.cfg.hid_size)
             U, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell, bw_cell, DC, 
                     dtype=tf.float32, sequence_length=self.doc_len)
-            U = tf.concat(U, 2)
+            U = tf.nn.dropout(tf.concat(U, 2), self.dp)
         
         with tf.variable_scope('Decoder') as scope:
             shape = (self.cfg.batch_size, self.cfg.hid_size)
@@ -88,7 +88,7 @@ class DCN:
             for i in range(self.cfg.max_iter):
                 if i > 0:
                     scope.reuse_variables()
-                X = tf.concat((u_s, u_e), 1)
+                X = tf.nn.dropout(tf.concat((u_s, u_e), 1), self.dp)
                 h_i, cell = LSTM_decoder(X, h_i, cell, self.cfg.hid_size, self.dp)
 
                 UT = tf.transpose(U, (1, 0, 2))
@@ -129,14 +129,14 @@ class DCN:
         optimizer = tf.train.AdamOptimizer(self.cfg.learning_rate)
         self.train_op = optimizer.minimize(self.loss)
 
-    def run_epoch(self, session, save='./save', load=None):
+    def run_epoch(self, session, load=None):
         if load:
             ckpt = self.train.get_checkpoint_state(load)
             self.saver.restore(session, ckpt.model_checkpoint_path)
         else:
             session.run(self.init_op)
-        if not os.path.exists(save):
-            os.mkdir(save)
+        if not os.path.exists(self.cfg.save):
+            os.mkdir(self.cfg.save)
         with open(self.cfg.vocab_path) as f:
             vocab = pickle.load(f)
         start_time = time.time()
@@ -166,7 +166,7 @@ class DCN:
                 time.time()-start_time, val_loss, val_results['f1'], val_results['exact_match']))
             if best_val_loss > val_loss:
                 best_val_loss = val_loss
-                self.saver.save(session, os.path.join(save, self.cfg.save_name))
+                self.saver.save(session, os.path.join(self.cfg.save, self.cfg.save_name))
                 best_val_epoch = epoch
             if epoch - best_val_epoch > self.cfg.early_stopping:
                 break
@@ -219,6 +219,7 @@ def maxout(inputs, num_units=1, axis=None):
 def HMN(h_i, u_t, u_s, u_e, l, p, dp):
     W_D = tf.get_variable('W_D', (5*l, l))
     r = tf.nn.tanh(tf.matmul(tf.concat((h_i, u_s, u_e), 1), W_D))
+    r = tf.nn.dropout(r, dp)
     W_1 = tf.get_variable('W_1', (3*l, l*p))
     b_1 = tf.get_variable('b_1', (l*p))
     mt_1 = maxout(tf.reshape(tf.matmul(tf.concat((u_t, r), 1), W_1) + b_1, (-1, l, p)))
@@ -235,9 +236,8 @@ def HMN(h_i, u_t, u_s, u_e, l, p, dp):
 
 def LSTM_decoder(X, H, cell, hid_size, dp):
     # note that shape of X is (batch_size, 4 * hid_size)
-    X = tf.nn.dropout(X, dp)
     XH = tf.concat((X, H), 1)
-
+    XH = tf.nn.dropout(XH, dp)
     W_I = tf.get_variable('W_I', (hid_size*5, hid_size))
     b_I = tf.get_variable('b_I', (hid_size))
     I = tf.nn.sigmoid(tf.matmul(XH, W_I) + b_I)
@@ -264,8 +264,7 @@ if __name__ == '__main__':
     config = Config()
     os.environ['CUDA_VISIBLE_DEVICES'] = config.device
     dcn = DCN(config)
-    # tf_cfg = tf.ConfigProto()
-    # tf_cfg.gpu_options.allow_growth = True
+    tf_cfg = tf.ConfigProto()
+    tf_cfg.gpu_options.allow_growth = True
     with tf.Session() as sess:
         dcn.run_epoch(sess)
-    
