@@ -10,14 +10,13 @@ Pretrained glove vectors are required
 
 http://nlp.stanford.edu/data/glove.840B.300d.zip
 
-python data_preprocess.py /path/to/glove.txt
-
 Data can be downloaded: 
 https://rajpurkar.github.io/SQuAD-explorer/
 
 put train-v1.1.json and dev-v1.1.json in ./data
 
-Set parameter in config.py, to train the model
+run preprocess: python data_preprocess.py /path/to/glove.txt
 
-python DCN.py
+Set parameter in config.py, 
 
+to train the model: python DCN.py
